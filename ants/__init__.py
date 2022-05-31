@@ -11,11 +11,12 @@ def main():
         "height": 50,
     }
 
-    canvas = SimpleContinuousCanvas(environment["width"] * 10, environment["height"] * 10)
+    canvas = SimpleContinuousCanvas(
+        environment["width"] * 12.5, environment["height"] * 12.5)
 
     server = ModularServer(AntsModel,
                            [canvas],
                            "Ants Model",
-                           {"N": 100, "width": environment["width"], "height": environment["height"]})
+                           {"N": 5, "width": environment["width"], "height": environment["height"]})
     server.port = 8521  # The default
     server.launch()

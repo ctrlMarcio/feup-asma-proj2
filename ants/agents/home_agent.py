@@ -6,8 +6,7 @@ class HomeAgent(Agent):
         # since there is only 1 home, it's ID is always 0 and unique
         super().__init__(unique_id, model)
 
-    @staticmethod
-    def get_portrayal():
+    def get_portrayal(self):
         return {"Shape": "circle",
                 "Filled": "true",
                 "r": 5,

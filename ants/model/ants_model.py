@@ -13,6 +13,7 @@ class AntsModel(Model):
         self.space = ContinuousSpace(width, height, False)
         self.schedule = RandomActivation(self)
         self.running = True
+        self.current_id = 0
 
         self._create_agents()
 
@@ -27,7 +28,7 @@ class AntsModel(Model):
 
     def _create_agents(self):
         # Create home
-        home = HomeAgent(0, self)
+        home = HomeAgent(self.next_id(), self)
         # adding to scheduler because the view go gets the agents at the scheduler
         # alternatively, we could have an array of "drawable agents" in here and we could retrieve it from there
         # but in the future we could be adding new ants or something and the scheduler in the home agent might make
@@ -36,8 +37,8 @@ class AntsModel(Model):
         self.space.place_agent(home, self.get_random_location())
 
         # Create agents
-        for i in range(self.num_agents):
-            a = AntAgent(i + 1, self)  # i + 1 because home agent is 0
+        for _ in range(self.num_agents):
+            a = AntAgent(self.next_id(), self)  # i + 1 because home agent is 0
             self.schedule.add(a)
             # Add the agent to a random grid cell
             self.space.place_agent(a, home.pos)

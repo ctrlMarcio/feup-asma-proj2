@@ -1,7 +1,8 @@
 import math
 from mesa import Agent
+from ants.agents.marker_agent import MarkerAgent
 
-from ants.movement.ant_state_machine import AntStateMachine
+from ants.behaviour.ant_state_machine import AntStateMachine
 
 
 class AntAgent(Agent):
@@ -16,23 +17,35 @@ class AntAgent(Agent):
         # random number between 0 and 360
         self.direction = self.random.random() * 360
 
-    @staticmethod
-    def get_portrayal():
+    def get_portrayal(self):
         return {"Shape": "circle",
                 "Filled": "true",
-                "r": 1,
+                "r": 1.5,
                 "Color": "red",
-                "Layer": 0}
+                "Layer": 1}
 
     def step(self):
         self.ant_state_machine.step()
+
+        if self.model.schedule.steps % 5 == 0:
+            marker = MarkerAgent(
+                self.model.next_id(), self.model)
+            self.model.schedule.add(marker)
+            self.model.space.place_agent(marker, self.pos)
 
     def wander(self):
         # moves the agent in a random direction
         self.direction += self.random.random() * (AntAgent.MAX_ANGLE_CHANGE * 2) - \
             AntAgent.MAX_ANGLE_CHANGE
         self.direction %= 360
-        self.pos = self._calculate_new_pos()
+
+        try:
+            pos = self._calculate_new_pos()
+            pos = self.model.space.torus_adj(pos)
+            self.pos = pos
+        except:
+            self.direction += 180
+            self.direction %= 360
 
     def _calculate_new_pos(self):
         # calculates the new position of the agent
