@@ -1,3 +1,4 @@
+import math
 from mesa import Agent
 
 from ants.movement.ant_state_machine import AntStateMachine
@@ -6,11 +7,14 @@ from ants.movement.ant_state_machine import AntStateMachine
 class AntAgent(Agent):
 
     STEP_SIZE = 0.1
+    MAX_ANGLE_CHANGE = 1
 
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
 
         self.ant_state_machine = AntStateMachine(self)
+        # random number between 0 and 360
+        self.direction = self.random.random() * 360
 
     @staticmethod
     def get_portrayal():
@@ -25,7 +29,13 @@ class AntAgent(Agent):
 
     def wander(self):
         # moves the agent in a random direction
-        # get random number between -STEP_SIZE and STEP_SIZE
-        x_step = self.STEP_SIZE * (2 * self.random.random() - 1)
-        y_step = self.STEP_SIZE * (2 * self.random.random() - 1)
-        self.pos = (self.pos[0] + x_step, self.pos[1] + y_step)
+        self.direction += self.random.random() * (AntAgent.MAX_ANGLE_CHANGE * 2) - \
+            AntAgent.MAX_ANGLE_CHANGE
+        self.direction %= 360
+        self.pos = self._calculate_new_pos()
+
+    def _calculate_new_pos(self):
+        # calculates the new position of the agent
+        new_x = self.pos[0] + AntAgent.STEP_SIZE * math.cos(self.direction)
+        new_y = self.pos[1] + AntAgent.STEP_SIZE * math.sin(self.direction)
+        return (new_x, new_y)
