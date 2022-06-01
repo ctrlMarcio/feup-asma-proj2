@@ -9,6 +9,7 @@ class AntAgent(Agent):
 
     STEP_SIZE = 0.1
     MAX_ANGLE_CHANGE = 1
+    FOOD_LOOKUP_RADIUS = 2.5
 
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
@@ -17,12 +18,20 @@ class AntAgent(Agent):
         # random number between 0 and 360
         self.direction = self.random.random() * 360
 
-    def get_portrayal(self):
-        return {"Shape": "circle",
-                "Filled": "true",
-                "r": 1.5,
-                "Color": "red",
-                "Layer": 1}
+    def _calculate_new_pos(self):
+        # calculates the new position of the agent
+        new_x = self.pos[0] + AntAgent.STEP_SIZE * math.cos(self.direction)
+        new_y = self.pos[1] + AntAgent.STEP_SIZE * math.sin(self.direction)
+        return (new_x, new_y)
+
+    def _move(self):
+        try:
+            pos = self._calculate_new_pos()
+            pos = self.model.space.torus_adj(pos)
+            self.pos = pos
+        except:
+            self.direction += 180
+            self.direction %= 360
 
     def step(self):
         self.ant_state_machine.step()
@@ -33,22 +42,27 @@ class AntAgent(Agent):
             self.model.schedule.add(marker)
             self.model.space.place_agent(marker, self.pos)
 
+    def go_to(self, position):
+        # moves the agent towards a position
+        myradians = math.atan2(
+            position[1]-self.pos[1], position[0]-self.pos[0])
+
+        direction = math.degrees(myradians)
+        self.direction = direction
+
+        self._move()
+
     def wander(self):
         # moves the agent in a random direction
         self.direction += self.random.random() * (AntAgent.MAX_ANGLE_CHANGE * 2) - \
             AntAgent.MAX_ANGLE_CHANGE
         self.direction %= 360
 
-        try:
-            pos = self._calculate_new_pos()
-            pos = self.model.space.torus_adj(pos)
-            self.pos = pos
-        except:
-            self.direction += 180
-            self.direction %= 360
+        self._move()
 
-    def _calculate_new_pos(self):
-        # calculates the new position of the agent
-        new_x = self.pos[0] + AntAgent.STEP_SIZE * math.cos(self.direction)
-        new_y = self.pos[1] + AntAgent.STEP_SIZE * math.sin(self.direction)
-        return (new_x, new_y)
+    def get_portrayal(self):
+        return {"Shape": "circle",
+                "Filled": "true",
+                "r": 1.5,
+                "Color": "red",
+                "Layer": 1}

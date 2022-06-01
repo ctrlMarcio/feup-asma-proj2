@@ -26,3 +26,7 @@ def scale_position(position, scale):
 
 def add_to_position(position, increment):
     return (position[0] + increment[0], position[1] + increment[1])
+
+
+def euclidean_distance(position1, position2):
+    return ((position1[0] - position2[0]) ** 2 + (position1[1] - position2[1]) ** 2) ** 0.5

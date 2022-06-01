@@ -11,9 +11,14 @@ class FoodAgent(Agent):
 
     def reduce(self):
         self.amount -= 1
+
         if self.amount <= 0:
             self.model.schedule.remove(self)
             self.model.space.remove_agent(self)
+
+            return None
+
+        return self.amount
 
     def get_portrayal(self):
         return {"Shape": "circle",
