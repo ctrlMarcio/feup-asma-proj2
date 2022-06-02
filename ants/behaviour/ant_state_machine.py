@@ -12,10 +12,10 @@ class AntStateMachine:
 
         self._config_state_machine()
 
-    def step(self):
+    def step(self) -> bool:
         return self.state_machine.step()
 
-    def _config_state_machine(self):
+    def _config_state_machine(self) -> None:
         self.state_machine.add_state(
             AntStateMachine.EXPLORING_STATE, self._exploring_handle)
         self.state_machine.add_state(
@@ -23,8 +23,10 @@ class AntStateMachine:
 
         self.state_machine.set_start(AntStateMachine.EXPLORING_STATE)
 
-    def _exploring_handle(self):
-        # move ant to right
+    def _exploring_handle(self) -> str:
+        if self.ant.model.schedule.steps % self.ant.LEAVE_MARKERS_RATE == 0:
+            self.ant.leave_marker()
+
         self.ant.wander()
         return AntStateMachine.EXPLORING_STATE
 

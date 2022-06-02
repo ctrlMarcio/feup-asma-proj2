@@ -10,6 +10,13 @@ class AntAgent(Agent):
     STEP_SIZE = 0.1
     MAX_ANGLE_CHANGE = 1
 
+    """The rate at which the ant leaves markers in the environment, in frames. 
+
+    Returns:
+        number: the rate. e.g. 5 means that the ant leaves a marker every 5 frames
+    """
+    LEAVE_MARKERS_RATE = 5
+
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
 
@@ -27,12 +34,6 @@ class AntAgent(Agent):
     def step(self):
         self.ant_state_machine.step()
 
-        if self.model.schedule.steps % 5 == 0:
-            marker = MarkerAgent(
-                self.model.next_id(), self.model)
-            self.model.schedule.add(marker)
-            self.model.space.place_agent(marker, self.pos)
-
     def wander(self):
         # moves the agent in a random direction
         self.direction += self.random.random() * (AntAgent.MAX_ANGLE_CHANGE * 2) - \
@@ -46,6 +47,11 @@ class AntAgent(Agent):
         except:
             self.direction += 180
             self.direction %= 360
+
+    def leave_marker(self) -> None:
+        marker = MarkerAgent(self.model.next_id(), self.model)
+        self.model.schedule.add(marker)
+        self.model.space.place_agent(marker, self.pos)
 
     def _calculate_new_pos(self):
         # calculates the new position of the agent
