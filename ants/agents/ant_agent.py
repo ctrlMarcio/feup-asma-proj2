@@ -1,6 +1,8 @@
 import math
+from typing import Tuple
 from mesa import Agent
 from ants.agents.marker_agent import MarkerAgent
+from ants.agents.home_agent import HomeAgent
 
 from ants.behaviour.ant_state_machine import AntStateMachine
 
@@ -10,12 +12,11 @@ class AntAgent(Agent):
     STEP_SIZE = 0.1
     MAX_ANGLE_CHANGE = 1
 
-    """The rate at which the ant leaves markers in the environment, in frames. 
-
-    Returns:
-        number: the rate. e.g. 5 means that the ant leaves a marker every 5 frames
-    """
+    # The rate at which the ant leaves markers in the environment, in frames.
     LEAVE_MARKERS_RATE = 5
+
+    # The radius of the agent's vision for markers.
+    VIEW_DISTANCE = 5
 
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
@@ -40,6 +41,58 @@ class AntAgent(Agent):
             AntAgent.MAX_ANGLE_CHANGE
         self.direction %= 360
 
+        self._move_in_direction()
+
+    def leave_marker(self) -> None:
+        marker = MarkerAgent(self.model.next_id(), self.model)
+        self.model.schedule.add(marker)
+        self.model.space.place_agent(marker, self.pos)
+
+    def is_near_marker(self) -> bool:
+        # returns true if the agent is near a marker
+        for agent in self.model.space.get_neighbors(self.pos, AntAgent.VIEW_DISTANCE):
+            if isinstance(agent, MarkerAgent):
+                return True
+
+        return False
+
+    def get_strongest_marker(self) -> MarkerAgent:
+        # returns the strongest marker in the agent's view
+        best_marker = None
+        # best life is the lowest possible
+        best_life = float("inf")
+        for agent in self.model.space.get_neighbors(self.pos, AntAgent.VIEW_DISTANCE):
+            if isinstance(agent, MarkerAgent):
+                if agent.life < best_life:
+                    best_marker = agent
+                    best_life = agent.life
+
+        return best_marker
+
+    def get_home(self) -> HomeAgent:
+        # returns the home agent of the agent
+        for agent in self.model.space.get_neighbors(self.pos, AntAgent.VIEW_DISTANCE):
+            if isinstance(agent, HomeAgent):
+                return agent
+
+        return None
+
+    def move_in_direction(self, pos: Tuple[float, float]) -> None:
+        # calculates the direction to the given position
+        x = pos[0] - self.pos[0]
+        y = pos[1] - self.pos[1]
+        self.direction = math.atan2(y, x)
+
+        self._move_in_direction()
+
+    def _calculate_new_pos(self) -> Tuple[float, float]:
+        # calculates the new position of the agent
+        new_x = self.pos[0] + AntAgent.STEP_SIZE * math.cos(self.direction)
+        new_y = self.pos[1] + AntAgent.STEP_SIZE * math.sin(self.direction)
+        return (new_x, new_y)
+
+    def _move_in_direction(self) -> None:
+        # moves the agent in the direction it is facing
         try:
             pos = self._calculate_new_pos()
             pos = self.model.space.torus_adj(pos)
@@ -47,14 +100,3 @@ class AntAgent(Agent):
         except:
             self.direction += 180
             self.direction %= 360
-
-    def leave_marker(self) -> None:
-        marker = MarkerAgent(self.model.next_id(), self.model)
-        self.model.schedule.add(marker)
-        self.model.space.place_agent(marker, self.pos)
-
-    def _calculate_new_pos(self):
-        # calculates the new position of the agent
-        new_x = self.pos[0] + AntAgent.STEP_SIZE * math.cos(self.direction)
-        new_y = self.pos[1] + AntAgent.STEP_SIZE * math.sin(self.direction)
-        return (new_x, new_y)
