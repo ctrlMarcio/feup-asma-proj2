@@ -7,8 +7,8 @@ from ants.view.simple_continuous_canvas import SimpleContinuousCanvas
 
 def main():
     environment = {
-        "width": 500,
-        "height": 500,
+        "width": 300,
+        "height": 300,
     }
 
     canvas = SimpleContinuousCanvas(
@@ -17,6 +17,6 @@ def main():
     server = ModularServer(AntsModel,
                            [canvas],
                            "Ants Model",
-                           {"N": 20, "width": environment["width"], "height": environment["height"]})
+                           {"N": 50, "width": environment["width"], "height": environment["height"]})
     server.port = 8521  # The default
     server.launch()

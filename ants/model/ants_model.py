@@ -1,8 +1,10 @@
+import ants.util.position as position_utils
+from ants.agents.ant_agent import AntAgent
+from ants.agents.food_agent import FoodAgent
+from ants.agents.home_agent import HomeAgent
 from mesa import Model
 from mesa.space import ContinuousSpace
 from mesa.time import RandomActivation
-from ants.agents.ant_agent import AntAgent
-from ants.agents.home_agent import HomeAgent
 
 
 class AntsModel(Model):
@@ -26,6 +28,41 @@ class AntsModel(Model):
     def step(self):
         self.schedule.step()
 
+    def _create_food_source(self):
+        food_location = self.get_random_location()
+
+        quantity = self.random.randrange(5, 20)
+
+        # add base food source
+        last_food_source = FoodAgent(self.next_id(), self)
+        random_direction = None
+
+        self.schedule.add(last_food_source)
+        self.space.place_agent(last_food_source, food_location)
+
+        for _ in range(1, quantity):
+            # calculate next food source based on a an adjacent direction
+            _, random_direction = position_utils.get_random_direction(
+                [random_direction] if random_direction else [])
+            food_location = position_utils.add_to_position(
+                last_food_source.pos, position_utils.scale_position(random_direction, 0.2))
+
+            if (self.space.out_of_bounds(food_location)):
+                _ -= 1
+                continue
+
+            last_food_source = FoodAgent(self.next_id(), self)
+
+            self.schedule.add(last_food_source)
+            self.space.place_agent(last_food_source, food_location)
+
+    def _create_ants(self, home):
+        for _ in range(self.num_agents):
+            a = AntAgent(self.next_id(), self)  # i + 1 because home agent is 0
+            self.schedule.add(a)
+            # Add the agent to a random grid cell
+            self.space.place_agent(a, home.pos)
+
     def _create_agents(self):
         # Create home
         home = HomeAgent(self.next_id(), self)
@@ -36,9 +73,8 @@ class AntsModel(Model):
         self.schedule.add(home)
         self.space.place_agent(home, self.get_random_location())
 
-        # Create agents
-        for _ in range(self.num_agents):
-            a = AntAgent(self.next_id(), self)  # i + 1 because home agent is 0
-            self.schedule.add(a)
-            # Add the agent to a random grid cell
-            self.space.place_agent(a, home.pos)
+        # Create food source
+        self._create_food_source()
+
+        # Create ants
+        self._create_ants(home)

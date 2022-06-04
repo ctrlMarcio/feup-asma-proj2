@@ -9,6 +9,6 @@ class HomeAgent(Agent):
     def get_portrayal(self):
         return {"Shape": "circle",
                 "Filled": "true",
-                "r": 5,
+                "r": 15,
                 "Color": "blue",
                 "Layer": 0}
