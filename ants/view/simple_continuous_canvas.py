@@ -21,12 +21,24 @@ class SimpleContinuousCanvas(VisualizationElement):
         space_state = []
         for obj in model.schedule.agents:
             portrayal = obj.get_portrayal()
-            x, y = obj.pos
-            x = (x - model.space.x_min) / \
-                (model.space.x_max - model.space.x_min)
-            y = (y - model.space.y_min) / \
-                (model.space.y_max - model.space.y_min)
-            portrayal["x"] = x
-            portrayal["y"] = y
-            space_state.append(portrayal)
+            x, y = self._get_x_y(model, obj)
+            # portrayal is a list, then is a list of portrayal dicts
+            if isinstance(portrayal, list):
+                for portrayal_dict in portrayal:
+                    portrayal_dict["x"] = x
+                    portrayal_dict["y"] = y
+                    space_state.append(portrayal_dict)
+            else:
+                portrayal["x"] = x
+                portrayal["y"] = y
+                space_state.append(portrayal)
+
         return space_state
+
+    def _get_x_y(self, model, obj):
+        x, y = obj.pos
+        x = (x - model.space.x_min) / \
+            (model.space.x_max - model.space.x_min)
+        y = (y - model.space.y_min) / \
+            (model.space.y_max - model.space.y_min)
+        return x, y

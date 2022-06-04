@@ -7,12 +7,12 @@ from ants.view.simple_continuous_canvas import SimpleContinuousCanvas
 
 def main():
     environment = {
-        "width": 50,
-        "height": 50,
+        "width": 500,
+        "height": 500,
     }
 
     canvas = SimpleContinuousCanvas(
-        environment["width"] * 12.5, environment["height"] * 12.5)
+        environment["width"], environment["height"])
 
     server = ModularServer(AntsModel,
                            [canvas],

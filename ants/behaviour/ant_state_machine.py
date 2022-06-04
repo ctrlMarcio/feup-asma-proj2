@@ -1,3 +1,4 @@
+from ants.agents.marker_agent import MarkerType
 from ants.util.state_machine import StateMachine
 
 
@@ -34,7 +35,7 @@ class AntStateMachine:
 
         # TEST temporary while no food
         if self.ant.is_near_marker():
-            if self.ant.model.schedule.steps > 2000:
+            if self.ant.model.schedule.steps > 200:
                 return AntStateMachine.GO_HOME_STATE
 
         return AntStateMachine.EXPLORING_STATE
@@ -49,11 +50,7 @@ class AntStateMachine:
             self.ant.move_in_direction(self.ant.get_home().pos)
             return AntStateMachine.GO_HOME_STATE
 
-        if self.ant.is_near_marker():
-            go_to_pos = self.ant.get_strongest_marker().pos
-            self.ant.move_in_direction(go_to_pos)
-        else:
-            self.ant.wander()
+        self._follow_marker(MarkerType.HOME)
 
         return AntStateMachine.GO_HOME_STATE
 
@@ -61,3 +58,14 @@ class AntStateMachine:
         # TODO
         print('fds')
         pass
+
+    def _follow_marker(self, marker_type: MarkerType) -> None:
+        # do this only once every FOLLOW_MARKER_RATE steps
+        if self.ant.model.schedule.steps % self.ant.FOLLOW_MARKERS_RATE == 0:
+            if self.ant.is_near_marker(marker_type):
+                go_to_pos = self.ant.get_strongest_marker(marker_type).pos
+                self.ant.move_in_direction(go_to_pos)
+            else:
+                self.ant.wander()
+        else:
+            self.ant.move()
