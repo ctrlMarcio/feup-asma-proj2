@@ -1,6 +1,7 @@
 import math
 from mesa import Agent
-from ants.agents.marker_agent import MarkerAgent
+from ants.agents.food_agent import FoodAgent
+from ants.agents.marker_agent import MarkerAgent, MarkerType
 
 from ants.behaviour.ant_state_machine import AntStateMachine
 
@@ -9,7 +10,6 @@ class AntAgent(Agent):
 
     STEP_SIZE = 0.1
     MAX_ANGLE_CHANGE = 1
-    FOOD_LOOKUP_RADIUS = 2.5
 
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
@@ -17,6 +17,8 @@ class AntAgent(Agent):
         self.ant_state_machine = AntStateMachine(self)
         # random number between 0 and 360
         self.direction = self.random.random() * 360
+
+        self.has_food = False
 
     def _calculate_new_pos(self):
         # calculates the new position of the agent
@@ -36,11 +38,32 @@ class AntAgent(Agent):
     def step(self):
         self.ant_state_machine.step()
 
-        if self.model.schedule.steps % 5 == 0:
-            marker = MarkerAgent(
-                self.model.next_id(), self.model)
-            self.model.schedule.add(marker)
-            self.model.space.place_agent(marker, self.pos)
+    def take_food(self):
+        self.has_food = True
+
+    def drop_food(self):
+        self.has_food = False
+
+    def get_nearest_food_source(self):
+        space = self.model.space
+
+        # check if is there food nearby
+        neighbours = space.get_neighbors(
+            self.pos, 5, include_center=True)  # todo: remove hardcoded lookup radius
+        # filter out food agents
+        food_neighbours = [n for n in neighbours if isinstance(n, FoodAgent)]
+
+        if len(food_neighbours) == 0:
+            return None
+
+        # an optimization could be done to return the nearest food source
+        return food_neighbours[0]
+
+    def drop_marker(self, type: MarkerType):
+        marker = MarkerAgent(self.model.next_id(),
+                             self.model, type=type)
+        self.model.schedule.add(marker)
+        self.model.space.place_agent(marker, self.pos)
 
     def go_to(self, position):
         # moves the agent towards a position

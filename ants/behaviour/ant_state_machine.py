@@ -1,12 +1,12 @@
-from ants.agents.food_agent import FoodAgent
+from ants.agents.marker_agent import MarkerAgent, MarkerType
 from ants.util.state_machine import StateMachine
-import ants.util.position as position_utils
 
 
 class AntStateMachine:
 
     EXPLORING_STATE = "EXPLORING"
     GOING_TO_FOOD = "GOING_TO_FOOD"
+    GOING_TO_HOME = "GOING_TO_HOME"
     END_STATE = "END"
 
     def __init__(self, ant):
@@ -25,54 +25,59 @@ class AntStateMachine:
         self.state_machine.add_state(
             AntStateMachine.GOING_TO_FOOD, self._going_to_food_handle)
         self.state_machine.add_state(
+            AntStateMachine.GOING_TO_HOME, self._going_to_home_handle)
+        self.state_machine.add_state(
             AntStateMachine.END_STATE, self._end_handle, end_state=1)
 
         self.state_machine.set_start(AntStateMachine.EXPLORING_STATE)
 
     def _exploring_handle(self):
-        # move ant to right
         self.ant.wander()
 
-        space = self.ant.model.space
+        # drop marker
+        if self.ant.model.schedule.steps % 5 == 0:
+            self.ant.drop_marker(MarkerType.HOME)
 
-        # check if is there food nearby
-        neighbours = space.get_neighbors(
-            self.ant.pos, 30, include_center=True)  # todo: remove hardcoded lookup radius
-        # filter out food agents
-        food_neighbours = [n for n in neighbours if isinstance(n, FoodAgent)]
+        # check if ant is near food
+        nearest_food_source = self.ant.get_nearest_food_source()
 
-        if len(food_neighbours) > 0:
-            # todo: find nearest food source and go to it
-            self.food_target = food_neighbours[0]  # search on this
+        if nearest_food_source is not None:
+            self.food_target = nearest_food_source
             return AntStateMachine.GOING_TO_FOOD
 
         return AntStateMachine.EXPLORING_STATE
 
     def _going_to_food_handle(self):
         if self.food_target is None or self.food_target.amount == 0:
-            # check if is there food nearby
-            neighbours = self.ant.model.space.get_neighbors(
-                self.ant.pos, 30, include_center=True)  # todo: remove hardcoded lookup radius
-            # filter out food agents
-            food_neighbours = [
-                n for n in neighbours if isinstance(n, FoodAgent)]
-
-            if len(food_neighbours) > 0:
-                # todo: find nearest food source and go to it
-                self.food_target = food_neighbours[0]  # search on this
-                return AntStateMachine.GOING_TO_FOOD
-
+            # this occurs when an ant selects a food source and then the food source is removed
             return AntStateMachine.EXPLORING_STATE
+
+        # drop marker
+        if self.ant.model.schedule.steps % 5 == 0:
+            self.ant.drop_marker(MarkerType.HOME)
+
         # move ant to food
         self.ant.go_to(self.food_target.pos)
 
-        # check if food is reached
+        space = self.ant.model.space
+
         # todo: replace hardcoded value
-        if position_utils.euclidean_distance(self.ant.pos, self.food_target.pos) < 2:
+        if space.get_distance(self.ant.pos, self.food_target.pos) <= 2:
+            self.ant.take_food()
             self.food_target.reduce()
-            return AntStateMachine.EXPLORING_STATE
+            return AntStateMachine.GOING_TO_HOME
 
         return AntStateMachine.GOING_TO_FOOD
+
+    def _going_to_home_handle(self):
+        self.ant.wander()
+
+        # drop marker
+        if self.ant.model.schedule.steps % 5 == 0:
+            self.ant.drop_marker(MarkerType.FOOD)
+
+        # implement follow markers
+        return AntStateMachine.GOING_TO_HOME
 
     def _end_handle(self):
         # TODO

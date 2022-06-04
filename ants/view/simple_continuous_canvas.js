@@ -5,6 +5,9 @@ var ContinuousVisualization = function (width, height, context) {
   var context = context;
 
   this.draw = function (objects) {
+    context.fillStyle = "black";
+    context.fillRect(0, 0, width, height);
+
     for (var i in objects) {
       console.log(i);
       var p = objects[i];

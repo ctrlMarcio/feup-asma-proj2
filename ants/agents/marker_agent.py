@@ -7,7 +7,7 @@ class MarkerType(Enum):
     Enum for marker types
     """
     UNKNOWN = "orange"
-    HOME = "orange"
+    HOME = "blue"
     FOOD = "green"
 
 

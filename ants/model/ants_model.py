@@ -47,6 +47,10 @@ class AntsModel(Model):
             food_location = position_utils.add_to_position(
                 last_food_source.pos, position_utils.scale_position(random_direction, 0.2))
 
+            if (self.space.out_of_bounds(food_location)):
+                _ -= 1
+                continue
+
             last_food_source = FoodAgent(self.next_id(), self)
 
             self.schedule.add(last_food_source)
