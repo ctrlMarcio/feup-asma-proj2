@@ -17,6 +17,6 @@ def main():
     server = ModularServer(AntsModel,
                            [canvas],
                            "Ants Model",
-                           {"N": 10, "width": environment["width"], "height": environment["height"]})
+                           {"N": 20, "width": environment["width"], "height": environment["height"]})
     server.port = 8521  # The default
     server.launch()

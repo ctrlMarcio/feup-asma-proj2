@@ -10,7 +10,8 @@ from ants.behaviour.ant_state_machine import AntStateMachine
 class AntAgent(Agent):
 
     STEP_SIZE = 1
-    MAX_ANGLE_CHANGE = 1
+    MAX_ANGLE_CHANGE = 90
+    WANDER_ANGLE_FREEDOM = 45
 
     # The rate at which the ant leaves markers in the environment, in frames.
     LEAVE_MARKERS_RATE = 5
@@ -49,8 +50,8 @@ class AntAgent(Agent):
 
     def wander(self):
         # moves the agent in a random direction
-        self.direction += self.random.random() * (AntAgent.MAX_ANGLE_CHANGE * 2) - \
-            AntAgent.MAX_ANGLE_CHANGE
+        self.direction += self.random.random() * AntAgent.WANDER_ANGLE_FREEDOM - \
+            AntAgent.WANDER_ANGLE_FREEDOM/2
         self.direction %= 360
 
         self.move()
@@ -91,26 +92,29 @@ class AntAgent(Agent):
 
         return None
 
-    def move_in_direction(self, pos: Tuple[float, float]) -> None:
+    def move_to_position(self, pos: Tuple[float, float]) -> None:
         # calculates the direction to the given position
         x = pos[0] - self.pos[0]
         y = pos[1] - self.pos[1]
-        self.direction = math.atan2(y, x)
+        self.direction = math.degrees(math.atan2(y, x))
 
         self.move()
 
     def move(self) -> None:
         # moves the agent in the direction it is facing
         try:
-            pos = self._calculate_new_pos()
+            pos = self._calculate_new_pos(self.direction + self.random.random(
+            ) * AntAgent.MAX_ANGLE_CHANGE - AntAgent.MAX_ANGLE_CHANGE / 2)
             pos = self.model.space.torus_adj(pos)
             self.pos = pos
         except:
-            self.direction += 180
+            self.direction += self.random.random() * 180 + 180
             self.direction %= 360
 
-    def _calculate_new_pos(self) -> Tuple[float, float]:
+    def _calculate_new_pos(self, direction: float = None) -> Tuple[float, float]:
         # calculates the new position of the agent
-        new_x = self.pos[0] + AntAgent.STEP_SIZE * math.cos(self.direction)
-        new_y = self.pos[1] + AntAgent.STEP_SIZE * math.sin(self.direction)
-        return (new_x, new_y)
+        if direction is None:
+            direction = self.direction
+
+        return (self.pos[0] + math.cos(math.radians(direction)) * AntAgent.STEP_SIZE,
+                self.pos[1] + math.sin(math.radians(direction)) * AntAgent.STEP_SIZE)
