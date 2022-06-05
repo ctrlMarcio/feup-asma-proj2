@@ -5,6 +5,7 @@ from ants.agents.home_agent import HomeAgent
 from mesa import Model
 from mesa.space import ContinuousSpace
 from mesa.time import RandomActivation
+from mesa.datacollection import DataCollector
 
 
 class AntsModel(Model):
@@ -23,7 +24,9 @@ class AntsModel(Model):
         self.display_view_distance = display_view_distance
         self.display_markers = display_markers
 
+        self._config_collector()
         self._create_agents()
+        self.datacollector.collect(self)
 
     def get_random_location(self):
         x = self.random.randrange(self.space.width)
@@ -33,6 +36,7 @@ class AntsModel(Model):
 
     def step(self):
         self.schedule.step()
+        self.datacollector.collect(self)
 
     def _create_food_source(self):
         food_location = self.get_random_location()
@@ -43,6 +47,8 @@ class AntsModel(Model):
         last_food_source = FoodAgent(
             self.next_id(), self, amount=self.food_source_amount)
         random_direction = None
+
+        self.food_in_sources_amount += (self.food_source_amount * quantity)
 
         self.schedule.add(last_food_source)
         self.space.place_agent(last_food_source, food_location)
@@ -87,3 +93,39 @@ class AntsModel(Model):
 
         # Create ants
         self._create_ants(home)
+
+    def _config_collector(self):
+        self.food_in_sources_amount = 0
+        self.food_in_home_amount = 0
+
+        self.datacollector = DataCollector(
+            model_reporters={
+                "Food in Sources": lambda m: m.food_in_sources_amount,
+                "Food at Home": lambda m: m.food_in_home_amount,
+                "Mean Distance": lambda m: m._get_min_distance(),
+            },)
+
+    def _get_mean_distance(self):
+        total_distance = 0
+        amount = 0
+        for agent in self.schedule.agents:
+            if isinstance(agent, AntAgent) \
+                    and not agent.has_food \
+                    and agent.commit_distance_food_home > 0:
+                total_distance += agent.commit_distance_food_home
+                amount += 1
+
+        if amount > 0:
+            return total_distance / amount
+        else:
+            return 0
+
+    def _get_min_distance(self):
+        min_distance = 0
+        for agent in self.schedule.agents:
+            if isinstance(agent, AntAgent) \
+                    and agent.commit_distance_food_home > 0:
+                if min_distance == 0 or agent.commit_distance_food_home < min_distance:
+                    min_distance = agent.commit_distance_food_home
+        
+        return min_distance

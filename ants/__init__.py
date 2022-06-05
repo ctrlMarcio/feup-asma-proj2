@@ -3,6 +3,8 @@ from numpy import number
 from ants.model.ants_model import AntsModel
 from ants.view.simple_continuous_canvas import SimpleContinuousCanvas
 
+from mesa.visualization.modules import ChartModule
+
 
 def main():
     environment = {
@@ -24,8 +26,24 @@ def main():
     display_markers_option = UserSettableParameter(
         "checkbox", "Display markers", value=False)
 
+    food_chart = ChartModule([{
+        "Label": "Food in Sources",
+        "Color": "Green",
+    },
+        {
+        "Label": "Food at Home",
+        "Color": "Blue",
+    }
+    ],
+        data_collector_name='datacollector',)
+
+    tracks_chart = ChartModule([{
+        "Label": "Mean Distance",
+        "Color": "Red",
+    }])
+
     server = ModularServer(AntsModel,
-                           [canvas],
+                           [canvas, food_chart, tracks_chart],
                            "Ants Model",
                            {"N": number_of_ants_option, "width": environment["width"], "height": environment["height"],
                             "food_sources": food_sources_option,

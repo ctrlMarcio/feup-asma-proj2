@@ -36,6 +36,8 @@ class AntAgent(Agent):
         self.seen_markers = set()
 
         self.step_count = 0
+        self.distance_food_home = -1
+        self.commit_distance_food_home = self.distance_food_home
 
     def get_portrayal(self):
         ant_shape = {
@@ -75,11 +77,17 @@ class AntAgent(Agent):
     def step(self):
         self.ant_state_machine.step()
 
+        if self.has_food:
+            self.distance_food_home += 1
+
     def take_food(self):
+        self.model.food_in_sources_amount -= 1
         self.has_food = True
         self.reset_step_counter()
 
     def drop_food(self):
+        self.commit_distance_food_home = self.distance_food_home
+        self.model.food_in_home_amount += 1
         self.has_food = False
         self.reset_step_counter()
 
