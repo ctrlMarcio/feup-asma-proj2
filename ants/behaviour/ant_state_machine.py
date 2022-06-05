@@ -1,4 +1,4 @@
-from ants.agents.marker_agent import  MarkerType
+from ants.agents.marker_agent import MarkerType
 from ants.util.state_machine import StateMachine
 
 
@@ -34,6 +34,9 @@ class AntStateMachine:
         self.state_machine.set_start(AntStateMachine.EXPLORING_STATE)
 
     def _handle_exploring(self) -> str:
+        if self.ant.get_home() is not None:
+            self.ant.reset_step_counter()
+
         if self.ant.model.schedule.steps % self.ant.LEAVE_MARKERS_RATE == 0:
             self.ant.drop_marker(MarkerType.HOME)
 
@@ -101,8 +104,8 @@ class AntStateMachine:
         # do this only once every FOLLOW_MARKER_RATE steps
         if self.ant.model.schedule.steps % self.ant.FOLLOW_MARKERS_RATE == 0:
             if self.ant.is_near_marker(marker_type):
-                go_to_pos = self.ant.get_strongest_marker(marker_type).pos
-                self.ant.go_to(go_to_pos)
+                marker = self.ant.get_strongest_marker(marker_type)
+                self.ant.go_to(marker.pos)
             else:
                 self.ant.wander()
         else:

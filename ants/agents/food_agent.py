@@ -3,9 +3,7 @@ from mesa import Agent
 
 class FoodAgent(Agent):
 
-    DEFAULT_AMOUNT = 10
-
-    def __init__(self, unique_id, model, amount=DEFAULT_AMOUNT):
+    def __init__(self, unique_id, model, amount):
         super().__init__(unique_id, model)
         self.amount = amount
 
@@ -23,6 +21,6 @@ class FoodAgent(Agent):
     def get_portrayal(self):
         return {"Shape": "circle",
                 "Filled": "true",
-                "r": 5 * self.amount/FoodAgent.DEFAULT_AMOUNT,
+                "r": self.amount * 0.5,
                 "Color": "#00ff3c",
                 "Layer": 0}

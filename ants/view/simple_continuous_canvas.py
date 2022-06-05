@@ -21,6 +21,10 @@ class SimpleContinuousCanvas(VisualizationElement):
         space_state = []
         for obj in model.schedule.agents:
             portrayal = obj.get_portrayal()
+
+            if portrayal is None:
+                continue
+
             x, y = self._get_x_y(model, obj)
             # portrayal is a list, then is a list of portrayal dicts
             if isinstance(portrayal, list):

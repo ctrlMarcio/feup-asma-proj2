@@ -10,12 +10,18 @@ from mesa.time import RandomActivation
 class AntsModel(Model):
     """A model with some number of agents."""
 
-    def __init__(self, N, width, height):
+    def __init__(self, N, width, height, food_sources=1, food_source_amount=25, display_view_distance=False, display_markers=False):
         self.num_agents = N
         self.space = ContinuousSpace(width, height, False)
         self.schedule = RandomActivation(self)
         self.running = True
         self.current_id = 0
+
+        # configurable parameters
+        self.food_sources = food_sources
+        self.food_source_amount = food_source_amount
+        self.display_view_distance = display_view_distance
+        self.display_markers = display_markers
 
         self._create_agents()
 
@@ -34,24 +40,26 @@ class AntsModel(Model):
         quantity = self.random.randrange(5, 20)
 
         # add base food source
-        last_food_source = FoodAgent(self.next_id(), self)
+        last_food_source = FoodAgent(
+            self.next_id(), self, amount=self.food_source_amount)
         random_direction = None
 
         self.schedule.add(last_food_source)
         self.space.place_agent(last_food_source, food_location)
 
-        for _ in range(1, quantity):
+        for i in range(1, quantity):
             # calculate next food source based on a an adjacent direction
             _, random_direction = position_utils.get_random_direction(
                 [random_direction] if random_direction else [])
             food_location = position_utils.add_to_position(
-                last_food_source.pos, position_utils.scale_position(random_direction, 0.2))
+                last_food_source.pos, position_utils.scale_position(random_direction, 2))
 
             if (self.space.out_of_bounds(food_location)):
-                _ -= 1
+                i -= 1
                 continue
 
-            last_food_source = FoodAgent(self.next_id(), self)
+            last_food_source = FoodAgent(
+                self.next_id(), self, amount=self.food_source_amount)
 
             self.schedule.add(last_food_source)
             self.space.place_agent(last_food_source, food_location)
@@ -74,7 +82,8 @@ class AntsModel(Model):
         self.space.place_agent(home, self.get_random_location())
 
         # Create food source
-        self._create_food_source()
+        for _ in range(self.food_sources):
+            self._create_food_source()
 
         # Create ants
         self._create_ants(home)

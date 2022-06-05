@@ -7,8 +7,8 @@ class MarkerType(Enum):
     Enum for marker types
     """
     UNKNOWN = "255, 165, 0"
-    HOME = "135, 206, 250"
-    FOOD = "60, 179, 113"
+    HOME = "213, 117, 255"
+    FOOD = "0, 156, 13"
 
 
 class MarkerAgent(Agent):
@@ -21,17 +21,22 @@ class MarkerAgent(Agent):
         self.type = type
         self.steps = steps
 
+    def die(self):
+        self.model.schedule.remove(self)
+        self.model.space.remove_agent(self)
+
     def step(self):
         self.life -= 1
         if self.life <= 0:
-            self.model.schedule.remove(self)
-            self.model.space.remove_agent(self)
+            self.die()
 
     def get_portrayal(self):
-        return {"Shape": "rect",
-                "Filled": "true",
-                "w": 0.005 * self.life/MarkerAgent.LIFESPAN,
-                "h": 0.005 * self.life/MarkerAgent.LIFESPAN,
-                "Color": f"rgba({self.type.value}, {self.life/MarkerAgent.LIFESPAN})",
-                "Layer": 0,
-                "Alpha": 0}
+        if self.model.display_markers:
+            return {"Shape": "rect",
+                    "Filled": "true",
+                    "w": 0.005 * self.life/MarkerAgent.LIFESPAN,
+                    "h": 0.005 * self.life/MarkerAgent.LIFESPAN,
+                    "Color": f"rgba({self.type.value}, {self.life/MarkerAgent.LIFESPAN})",
+                    "Layer": 0}
+
+        return None

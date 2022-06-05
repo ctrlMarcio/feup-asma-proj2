@@ -10,20 +10,20 @@ from ants.behaviour.ant_state_machine import AntStateMachine
 
 class AntAgent(Agent):
 
-    STEP_SIZE = 1
+    STEP_SIZE = 2.5
     MAX_ANGLE_CHANGE = 180
     WANDER_ANGLE_FREEDOM = 15
 
     # The rate at which the ant leaves markers in the environment, in frames.
     LEAVE_MARKERS_RATE = 5
     # The rate at which the ant looks for new markers
-    FOLLOW_MARKERS_RATE = 1
+    FOLLOW_MARKERS_RATE = 5
 
     # The radius of the agent's vision for markers.
     VIEW_DISTANCE = 20
     # The position in which the agent can be considered **in** a position.
     # Basically the VIEW_DISTANCE for legs.
-    POSITION_THRESHOLD = 2
+    POSITION_THRESHOLD = 20
 
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
@@ -33,26 +33,44 @@ class AntAgent(Agent):
         self.direction = self.random.random() * 360
 
         self.has_food = False
+        self.seen_markers = set()
 
         self.step_count = 0
 
     def get_portrayal(self):
-        return [
-            {
-                "Shape": "circle",
-                "Filled": True,
-                "r": 5,
-                "Color": "red" if not self.has_food else "white",
-                "Layer": 1
-            },
-            {
-                "Shape": "circle",
-                "Filled": False,
-                "r": AntAgent.VIEW_DISTANCE,
-                "Color": "red",
-                "Layer": 1
-            }
-            ]
+        ant_shape = {
+            "Shape": "circle",
+            "Filled": True,
+            "r": 2,
+            "Color": "red" if not self.has_food else "white",
+            "Layer": 1
+        }
+
+        view_distance_shape = {
+            "Shape": "circle",
+            "Filled": False,
+            "r": AntAgent.VIEW_DISTANCE,
+            "Color": "red",
+            "Layer": 1
+        }
+
+        food_shape = {
+            "Shape": "circle",
+            "Filled": True,
+            "r": 0.5,
+            "Color": "green",
+            "Layer": 1
+        }
+
+        shapes = [ant_shape]
+
+        if self.model.display_view_distance:
+            shapes.append(view_distance_shape)
+
+        if self.has_food:
+            shapes.append(food_shape)
+
+        return shapes
 
     def step(self):
         self.ant_state_machine.step()
@@ -109,7 +127,7 @@ class AntAgent(Agent):
         # returns true if the agent is near a marker
         for agent in self.model.space.get_neighbors(self.pos, AntAgent.VIEW_DISTANCE):
             if isinstance(agent, MarkerAgent):
-                if marker_type is None or agent.type == marker_type:
+                if (marker_type is None or agent.type == marker_type) and agent.unique_id not in self.seen_markers:
                     return True
 
         return False
@@ -120,11 +138,15 @@ class AntAgent(Agent):
         # best life is the lowest possible
         best_steps = float("inf")
         for agent in self.model.space.get_neighbors(self.pos, AntAgent.VIEW_DISTANCE):
-            if isinstance(agent, MarkerAgent) \
-                    and (marker_type is None or agent.type == marker_type) \
-                    and agent.steps < best_steps:
-                best_marker = agent
-                best_steps = agent.steps
+            if isinstance(agent, MarkerAgent):
+
+                if (marker_type is None or agent.type == marker_type) \
+                        and agent.steps < best_steps \
+                        and agent.unique_id not in self.seen_markers:
+                    best_marker = agent
+                    best_steps = agent.steps
+
+                self.seen_markers.add(agent.unique_id)
 
         return best_marker
 
@@ -150,9 +172,10 @@ class AntAgent(Agent):
     def is_at(self, pos: Tuple[float, float]) -> bool:
         # returns true if the agent is at a position
         return self.model.space.get_distance(self.pos, pos) <= AntAgent.POSITION_THRESHOLD
-    
+
     def reset_step_counter(self) -> None:
         self.step_count = 0
+        self.seen_markers = set()
 
     def _calculate_new_pos(self, direction: float = None) -> Tuple[float, float]:
         # calculates the new position of the agent
