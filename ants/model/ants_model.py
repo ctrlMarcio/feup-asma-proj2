@@ -11,7 +11,7 @@ from mesa.datacollection import DataCollector
 class AntsModel(Model):
     """A model with some number of agents."""
 
-    def __init__(self, N, width, height, food_sources=1, food_source_amount=25, display_view_distance=False, display_markers=False):
+    def __init__(self, N, width, height, food_sources=1, food_source_amount=25, display_view_distance=False, display_markers=False, home_x=-1, home_y=-1, food_source_scenario="no scenario"):
         self.num_agents = N
         self.space = ContinuousSpace(width, height, False)
         self.schedule = RandomActivation(self)
@@ -19,7 +19,9 @@ class AntsModel(Model):
         self.current_id = 0
 
         # configurable parameters
-        self.food_sources = food_sources
+        self.home_location = (home_x, home_y)
+        self.food_source_scenario = food_source_scenario
+        self.food_sources = food_sources if self.food_source_scenario == "no scenario" else 1
         self.food_source_amount = food_source_amount
         self.display_view_distance = display_view_distance
         self.display_markers = display_markers
@@ -39,7 +41,12 @@ class AntsModel(Model):
         self.datacollector.collect(self)
 
     def _create_food_source(self):
-        food_location = self.get_random_location()
+        if self.food_source_scenario == "no scenario":
+            food_location = self.get_random_location()
+        elif self.food_source_scenario == "scenario 1":
+            food_location = (10, 10)
+        elif self.food_source_scenario == "scenario 2":
+            food_location = (300, 300)
 
         quantity = self.random.randrange(5, 20)
 
@@ -85,7 +92,11 @@ class AntsModel(Model):
         # but in the future we could be adding new ants or something and the scheduler in the home agent might make
         #   sense
         self.schedule.add(home)
-        self.space.place_agent(home, self.get_random_location())
+
+        if self.home_location[0] == -1 and self.home_location[1] == -1:
+            self.space.place_agent(home, self.get_random_location())
+        else:
+            self.space.place_agent(home, self.home_location)
 
         # Create food source
         for _ in range(self.food_sources):
