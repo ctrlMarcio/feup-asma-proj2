@@ -24,12 +24,19 @@ class AntAgent(Agent):
     # Basically the VIEW_DISTANCE for legs.
     POSITION_THRESHOLD = 20
 
+    ANT_SPAWN_FOOD_RATIO = 2
+
+    # Steps without getting food
+    LIFE = 1000
+
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
 
         self.ant_state_machine = AntStateMachine(self)
         # random number between 0 and 360
         self.direction = self.random.random() * 360
+
+        self.life = AntAgent.LIFE
 
         self.has_food = False
         self.seen_markers = set()
@@ -46,7 +53,7 @@ class AntAgent(Agent):
             "Shape": "circle",
             "Filled": True,
             "r": 2,
-            "Color": "red" if not self.has_food else "white",
+            "Color": "red" if not self.has_food else "black",
             "Layer": 1
         }
 
@@ -76,10 +83,38 @@ class AntAgent(Agent):
 
         return shapes
 
+    def get_neighbours(self):
+        neighbours = self.model.space.get_neighbors(
+            self.pos, AntAgent.VIEW_DISTANCE)
+
+        return neighbours
+
+    def die(self):
+        self.model.schedule.remove(self)
+        self.model.space.remove_agent(self)
+
+    def life_left(self):
+        return self.life / AntAgent.LIFE
+
+    def reset_life(self):
+        if self.model.food_in_home_amount > 0:
+            self.life = AntAgent.LIFE
+            self.model.food_in_home_amount -= 0.5
+
+        if self.model.food_in_home_amount >= self.model.num_agents * AntAgent.ANT_SPAWN_FOOD_RATIO:
+            self.model._create_ant(self.model.home_location)
+            self.model.num_agents += 1
+            self.model.food_in_home_amount -= 1
+
     def step(self):
         self.ant_state_machine.step()
 
+        self.life -= 1
         self.distance_food_home += 1
+
+        if self.life <= 0:
+            self.die()
+            self.model.num_agents -= 1
 
     def take_food(self):
         self.model.food_in_sources_amount -= 1
@@ -94,12 +129,10 @@ class AntAgent(Agent):
         self.has_food = False
         self.reset_step_counter()
 
-    def get_nearest_food_source(self):
-        space = self.model.space
+    def get_nearest_food_source(self, neighbours=None):
+        if neighbours is None:
+            neighbours = self.get_neighbours()
 
-        # check if is there food nearby
-        neighbours = space.get_neighbors(
-            self.pos, AntAgent.VIEW_DISTANCE, include_center=True)  # todo: remove hardcoded lookup radius
         # filter out food agents
         food_neighbours = [n for n in neighbours if isinstance(n, FoodAgent)]
 
@@ -115,6 +148,7 @@ class AntAgent(Agent):
         self.model.schedule.add(marker)
         self.model.space.place_agent(marker, self.pos)
         self.step_count += 1
+        pass
 
     def go_to(self, position):
         # do this with 75% percentage
@@ -139,21 +173,27 @@ class AntAgent(Agent):
 
         self.move()
 
-    def is_near_marker(self, marker_type: MarkerType = None) -> bool:
+    def is_near_marker(self, marker_type: MarkerType = None, neighbours=None) -> bool:
+        if neighbours is None:
+            neighbours = self.get_neighbours()
+
         # returns true if the agent is near a marker
-        for agent in self.model.space.get_neighbors(self.pos, AntAgent.VIEW_DISTANCE):
+        for agent in neighbours:
             if isinstance(agent, MarkerAgent):
                 if (marker_type is None or agent.type == marker_type) and agent.unique_id not in self.seen_markers:
                     return True
 
         return False
 
-    def get_strongest_marker(self, marker_type: MarkerType = None) -> MarkerAgent:
+    def get_strongest_marker(self, marker_type: MarkerType = None, neighbours=None) -> MarkerAgent:
+        if neighbours is None:
+            neighbours = self.get_neighbours()
+
         # returns the strongest marker in the agent's view
         best_marker = None
         # best life is the lowest possible
         best_steps = float("inf")
-        for agent in self.model.space.get_neighbors(self.pos, AntAgent.VIEW_DISTANCE):
+        for agent in neighbours:
             if isinstance(agent, MarkerAgent):
 
                 if (marker_type is None or agent.type == marker_type) \
@@ -166,9 +206,12 @@ class AntAgent(Agent):
 
         return best_marker
 
-    def get_home(self) -> HomeAgent:
+    def get_home(self, neighbours=None) -> HomeAgent:
+        if neighbours is None:
+            neighbours = self.get_neighbours()
+
         # returns the home agent of the agent
-        for agent in self.model.space.get_neighbors(self.pos, AntAgent.VIEW_DISTANCE):
+        for agent in neighbours:
             if isinstance(agent, HomeAgent):
                 return agent
 

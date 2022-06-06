@@ -12,12 +12,15 @@ from mesa.datacollection import DataCollector
 class AntsModel(Model):
     """A model with some number of agents."""
 
-    def __init__(self, N, width, height, food_sources=1, food_source_amount=25, display_view_distance=False, display_markers=False, home_x=-1, home_y=-1, food_source_scenario="no scenario", ant_freedom_coefficient=0.25, ant_direction_noise=90):
+    def __init__(self, N, width, height, food_sources=1, food_source_amount=25, display_view_distance=False, display_markers=False, home_x=-1, home_y=-1, food_source_scenario="no scenario", ant_freedom_coefficient=0.25, ant_direction_noise=90, ant_spawn_rate=10):
         self.num_agents = N
         self.space = ContinuousSpace(width, height, False)
         self.schedule = RandomActivation(self)
         self.running = True
         self.current_id = 0
+
+        self.food_in_sources_amount = 0
+        self.food_in_home_amount = 0
 
         # configurable parameters
         self.home_location = (home_x, home_y)
@@ -28,6 +31,7 @@ class AntsModel(Model):
         self.display_markers = display_markers
         self.ant_freedom_coefficient = ant_freedom_coefficient
         self.ant_direction_noise = ant_direction_noise
+        self.ant_spawn_rate = ant_spawn_rate
 
         self._config_collector()
         self._create_agents()
@@ -40,6 +44,11 @@ class AntsModel(Model):
         return (x, y)
 
     def step(self):
+        if self.num_agents == 0:
+            self.running = False
+            return
+            # raise Exception("No more ants left")
+
         self.schedule.step()
         self.datacollector.collect(self)
 
@@ -86,12 +95,15 @@ class AntsModel(Model):
                 self.best_distance = 2 * math.dist(
                     food_location, self.home_location)
 
+    def _create_ant(self, location):
+        a = AntAgent(self.next_id(), self)  # i + 1 because home agent is 0
+        self.schedule.add(a)
+        # Add the agent to a random grid cell
+        self.space.place_agent(a, location)
+
     def _create_ants(self, home):
         for _ in range(self.num_agents):
-            a = AntAgent(self.next_id(), self)  # i + 1 because home agent is 0
-            self.schedule.add(a)
-            # Add the agent to a random grid cell
-            self.space.place_agent(a, home.pos)
+            self._create_ant(home.pos)
 
     def _create_agents(self):
         # Create home
@@ -116,9 +128,6 @@ class AntsModel(Model):
         self._create_ants(home)
 
     def _config_collector(self):
-        self.food_in_sources_amount = 0
-        self.food_in_home_amount = 0
-
         self.best_distance = -1
 
         self.datacollector = DataCollector(
@@ -127,6 +136,7 @@ class AntsModel(Model):
                 "Food at Home": lambda m: m.food_in_home_amount,
                 "Min Distance": lambda m: m._get_min_distance(),
                 "Best Distance": lambda m: m.best_distance,
+                "Number of Ants": lambda m: m.num_agents
             },)
 
     def _get_mean_distance(self):

@@ -8,8 +8,8 @@ from mesa.visualization.modules import ChartModule
 
 def main():
     environment = {
-        "width": 600,
-        "height": 600,
+        "width": 500,
+        "height": 500,
     }
 
     canvas = SimpleContinuousCanvas(
@@ -57,8 +57,15 @@ def main():
         "Color": "Black",
     }])
 
+    ants_char = ChartModule([
+        {
+            "Label": "Number of Ants",
+            "Color": "Green",
+        }
+    ])
+
     server = ModularServer(AntsModel,
-                           [canvas, food_chart, tracks_chart],
+                           [canvas, food_chart, tracks_chart, ants_char],
                            "Ants Model",
                            {
                                "placeholder_1": UserSettableParameter('static_text', value="Model settings"),
