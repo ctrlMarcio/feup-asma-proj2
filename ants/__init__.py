@@ -21,6 +21,10 @@ def main():
         "number", "Food sources", value=1)
     food_source_amount_option = UserSettableParameter(
         "number", "Food source amount", value=25)
+    ant_freedom_coefficient_option = UserSettableParameter(
+        "number", "Ant freedom coefficient (0-1)", value=0.25)
+    ant_direction_noise = UserSettableParameter(
+        "number", "Ant direction noise (degrees)", value=180)
     display_view_distance_option = UserSettableParameter(
         "checkbox", "Display view distance", value=False)
     display_markers_option = UserSettableParameter(
@@ -46,8 +50,11 @@ def main():
         data_collector_name='datacollector',)
 
     tracks_chart = ChartModule([{
-        "Label": "Mean Distance",
+        "Label": "Min Distance",
         "Color": "Red",
+    }, {
+        "Label": "Best Distance",
+        "Color": "Black",
     }])
 
     server = ModularServer(AntsModel,
@@ -58,6 +65,8 @@ def main():
                                "N": number_of_ants_option, "width": environment["width"], "height": environment["height"],
                                "food_sources": food_sources_option,
                                "food_source_amount": food_source_amount_option,
+                               "ant_freedom_coefficient": ant_freedom_coefficient_option,
+                               "ant_direction_noise": ant_direction_noise,
                                "food_source_scenario": food_source_scenario_option,
                                "home_x": home_x_option,
                                "home_y": home_y_option,

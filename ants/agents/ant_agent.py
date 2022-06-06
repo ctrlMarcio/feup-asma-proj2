@@ -11,7 +11,6 @@ from ants.behaviour.ant_state_machine import AntStateMachine
 class AntAgent(Agent):
 
     STEP_SIZE = 2.5
-    MAX_ANGLE_CHANGE = 180
     WANDER_ANGLE_FREEDOM = 15
 
     # The rate at which the ant leaves markers in the environment, in frames.
@@ -38,6 +37,9 @@ class AntAgent(Agent):
         self.step_count = 0
         self.distance_food_home = -1
         self.commit_distance_food_home = self.distance_food_home
+
+        self.freedom_coefficient = model.ant_freedom_coefficient
+        self.ant_direction_noise = model.ant_direction_noise
 
     def get_portrayal(self):
         ant_shape = {
@@ -77,8 +79,7 @@ class AntAgent(Agent):
     def step(self):
         self.ant_state_machine.step()
 
-        if self.has_food:
-            self.distance_food_home += 1
+        self.distance_food_home += 1
 
     def take_food(self):
         self.model.food_in_sources_amount -= 1
@@ -86,7 +87,9 @@ class AntAgent(Agent):
         self.reset_step_counter()
 
     def drop_food(self):
-        self.commit_distance_food_home = self.distance_food_home
+        self.commit_distance_food_home = self.distance_food_home * \
+            AntAgent.STEP_SIZE + 2*AntAgent.POSITION_THRESHOLD
+        self.distance_food_home = 0
         self.model.food_in_home_amount += 1
         self.has_food = False
         self.reset_step_counter()
@@ -114,6 +117,11 @@ class AntAgent(Agent):
         self.step_count += 1
 
     def go_to(self, position):
+        # do this with 75% percentage
+        if self.random.random() < self.freedom_coefficient:
+            self.wander()
+            return
+
         # moves the agent towards a position
         myradians = math.atan2(
             position[1]-self.pos[1], position[0]-self.pos[0])
@@ -170,7 +178,7 @@ class AntAgent(Agent):
         # moves the agent in the direction it is facing
         try:
             pos = self._calculate_new_pos(self.direction + self.random.random(
-            ) * AntAgent.MAX_ANGLE_CHANGE - AntAgent.MAX_ANGLE_CHANGE / 2)
+            ) * self.ant_direction_noise - self.ant_direction_noise / 2)
             pos = self.model.space.torus_adj(pos)
             self.pos = pos
         except:

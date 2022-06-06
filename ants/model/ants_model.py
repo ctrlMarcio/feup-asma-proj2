@@ -1,3 +1,4 @@
+import math
 import ants.util.position as position_utils
 from ants.agents.ant_agent import AntAgent
 from ants.agents.food_agent import FoodAgent
@@ -11,7 +12,7 @@ from mesa.datacollection import DataCollector
 class AntsModel(Model):
     """A model with some number of agents."""
 
-    def __init__(self, N, width, height, food_sources=1, food_source_amount=25, display_view_distance=False, display_markers=False, home_x=-1, home_y=-1, food_source_scenario="no scenario"):
+    def __init__(self, N, width, height, food_sources=1, food_source_amount=25, display_view_distance=False, display_markers=False, home_x=-1, home_y=-1, food_source_scenario="no scenario", ant_freedom_coefficient=0.25, ant_direction_noise=90):
         self.num_agents = N
         self.space = ContinuousSpace(width, height, False)
         self.schedule = RandomActivation(self)
@@ -25,6 +26,8 @@ class AntsModel(Model):
         self.food_source_amount = food_source_amount
         self.display_view_distance = display_view_distance
         self.display_markers = display_markers
+        self.ant_freedom_coefficient = ant_freedom_coefficient
+        self.ant_direction_noise = ant_direction_noise
 
         self._config_collector()
         self._create_agents()
@@ -43,12 +46,13 @@ class AntsModel(Model):
     def _create_food_source(self):
         if self.food_source_scenario == "no scenario":
             food_location = self.get_random_location()
+            quantity = self.random.randrange(5, 20)
         elif self.food_source_scenario == "scenario 1":
             food_location = (10, 10)
+            quantity = 5
         elif self.food_source_scenario == "scenario 2":
             food_location = (300, 300)
-
-        quantity = self.random.randrange(5, 20)
+            quantity = 10
 
         # add base food source
         last_food_source = FoodAgent(
@@ -77,6 +81,11 @@ class AntsModel(Model):
             self.schedule.add(last_food_source)
             self.space.place_agent(last_food_source, food_location)
 
+            # calculate distance to home
+            if self.best_distance < 0:
+                self.best_distance = 2 * math.dist(
+                    food_location, self.home_location)
+
     def _create_ants(self, home):
         for _ in range(self.num_agents):
             a = AntAgent(self.next_id(), self)  # i + 1 because home agent is 0
@@ -94,7 +103,8 @@ class AntsModel(Model):
         self.schedule.add(home)
 
         if self.home_location[0] == -1 and self.home_location[1] == -1:
-            self.space.place_agent(home, self.get_random_location())
+            self.home_location = self.get_random_location()
+            self.space.place_agent(home, self.home_location)
         else:
             self.space.place_agent(home, self.home_location)
 
@@ -109,11 +119,14 @@ class AntsModel(Model):
         self.food_in_sources_amount = 0
         self.food_in_home_amount = 0
 
+        self.best_distance = -1
+
         self.datacollector = DataCollector(
             model_reporters={
                 "Food in Sources": lambda m: m.food_in_sources_amount,
                 "Food at Home": lambda m: m.food_in_home_amount,
-                "Mean Distance": lambda m: m._get_min_distance(),
+                "Min Distance": lambda m: m._get_min_distance(),
+                "Best Distance": lambda m: m.best_distance,
             },)
 
     def _get_mean_distance(self):
@@ -138,5 +151,5 @@ class AntsModel(Model):
                     and agent.commit_distance_food_home > 0:
                 if min_distance == 0 or agent.commit_distance_food_home < min_distance:
                     min_distance = agent.commit_distance_food_home
-        
+
         return min_distance
