@@ -163,7 +163,11 @@ class AntsModel(Model):
                 "Min Distance": lambda m: m._get_min_distance(),
                 "Best Distance": lambda m: m.best_distance,
                 "Number of Ants": lambda m: m.num_agents
-            },)
+            },
+            agent_reporters={
+                # if agent has attribute
+                "Life": lambda a: a.life if hasattr(a, "life") else -1
+            })
 
     def _get_mean_distance(self):
         total_distance = 0

@@ -1,6 +1,7 @@
 from mesa.visualization.ModularVisualization import ModularServer, UserSettableParameter
 from numpy import number
 from ants.model.ants_model import AntsModel
+from ants.view.histogram_module import HistogramModule
 from ants.view.simple_continuous_canvas import SimpleContinuousCanvas
 
 from mesa.visualization.modules import ChartModule
@@ -70,8 +71,10 @@ def main():
         }
     ])
 
+    life_histogram = HistogramModule(list(range(0, 100, 1)), 200, 500)
+
     server = ModularServer(AntsModel,
-                           [canvas, food_chart, tracks_chart, ants_char],
+                           [canvas, food_chart, tracks_chart, ants_char, life_histogram],
                            "Ants Model",
                            {
                                "placeholder_1": UserSettableParameter('static_text', value="Model settings"),
