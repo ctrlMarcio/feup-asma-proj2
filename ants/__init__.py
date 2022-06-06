@@ -16,15 +16,21 @@ def main():
         environment["width"], environment["height"])
 
     number_of_ants_option = UserSettableParameter(
-        "number", "Number of ants", value=100, max_value=500)
+        "slider", "Number of ants", value=100, max_value=500, min_value=1, step=1)
+    life_of_ants_option = UserSettableParameter(
+        "slider", "Life of ants", value=1000, min_value=100, max_value=10000, step=100)
+    ratio_to_go_home_option = UserSettableParameter(
+        "slider", "Ratio to go home", value=0.5, min_value=0.1, max_value=1, step=0.01)
+    ratio_to_create_ants_option = UserSettableParameter(
+        "slider", "Ratio to create ants", value=2, min_value=0.1, max_value=5, step=0.1)
     food_sources_option = UserSettableParameter(
-        "number", "Food sources", value=1)
+        "slider", "Food sources", value=1, min_value=1, max_value=20, step=1)
     food_source_amount_option = UserSettableParameter(
-        "number", "Food source amount", value=25)
+        "slider", "Food source amount", value=25, min_value=1, max_value=200, step=1)
     ant_freedom_coefficient_option = UserSettableParameter(
-        "number", "Ant freedom coefficient (0-1)", value=0.25)
+        "slider", "Ant freedom coefficient (0-1)", value=0.25, min_value=0, max_value=1, step=0.01)
     ant_direction_noise = UserSettableParameter(
-        "number", "Ant direction noise (degrees)", value=180)
+        "slider", "Ant direction noise (degrees)", value=180, min_value=0, max_value=360, step=1)
     display_view_distance_option = UserSettableParameter(
         "checkbox", "Display view distance", value=False)
     display_markers_option = UserSettableParameter(
@@ -70,6 +76,9 @@ def main():
                            {
                                "placeholder_1": UserSettableParameter('static_text', value="Model settings"),
                                "N": number_of_ants_option, "width": environment["width"], "height": environment["height"],
+                               "ants_life": life_of_ants_option,
+                               "go_home_ratio": ratio_to_go_home_option,
+                               "create_ants_ratio": ratio_to_create_ants_option,
                                "food_sources": food_sources_option,
                                "food_source_amount": food_source_amount_option,
                                "ant_freedom_coefficient": ant_freedom_coefficient_option,

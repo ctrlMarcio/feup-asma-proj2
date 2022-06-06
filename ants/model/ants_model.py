@@ -12,13 +12,20 @@ from mesa.datacollection import DataCollector
 class AntsModel(Model):
     """A model with some number of agents."""
 
-    def __init__(self, N, width, height, food_sources=1, food_source_amount=25, display_view_distance=False, display_markers=False, home_x=-1, home_y=-1, food_source_scenario="no scenario", ant_freedom_coefficient=0.25, ant_direction_noise=90, ant_spawn_rate=10):
+    def __init__(self, N, width, height, food_sources=1,
+                 food_source_amount=25, display_view_distance=False,
+                 display_markers=False, home_x=-1, home_y=-1,
+                 food_source_scenario="no scenario", ant_freedom_coefficient=0.25,
+                 ant_direction_noise=90, create_ants_ratio=2,
+                 ants_life=1000, go_home_ratio=0.5
+                 ):
         self.num_agents = N
         self.space = ContinuousSpace(width, height, False)
         self.schedule = RandomActivation(self)
         self.running = True
         self.current_id = 0
 
+        self.ant_spawn_rate = 10
         self.food_in_sources_amount = 0
         self.food_in_home_amount = 0
 
@@ -31,7 +38,9 @@ class AntsModel(Model):
         self.display_markers = display_markers
         self.ant_freedom_coefficient = ant_freedom_coefficient
         self.ant_direction_noise = ant_direction_noise
-        self.ant_spawn_rate = ant_spawn_rate
+        self.create_ants_ratio = create_ants_ratio
+        self.ants_life = ants_life
+        self.go_home_ratio = go_home_ratio
 
         self._config_collector()
         self._create_agents()

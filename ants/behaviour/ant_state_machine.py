@@ -37,7 +37,7 @@ class AntStateMachine:
         self.state_machine.set_start(AntStateMachine.EXPLORING_STATE)
 
     def _handle_exploring(self) -> str:
-        if self.ant.life_left() <= 0.5:
+        if self.ant.life_left() <= self.ant.model.go_home_ratio:
             return AntStateMachine.GET_ENERGY_STATE
 
         neighbours = self.ant.get_neighbours()
@@ -66,7 +66,7 @@ class AntStateMachine:
         return AntStateMachine.EXPLORING_STATE
 
     def _handle_going_to_food(self):
-        if self.ant.life_left() <= 0.5:
+        if self.ant.life_left() <= self.ant.model.go_home_ratio:
             return AntStateMachine.GET_ENERGY_STATE
 
         if self.food_target is None or self.food_target.amount == 0:

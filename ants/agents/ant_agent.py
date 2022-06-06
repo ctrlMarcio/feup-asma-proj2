@@ -24,19 +24,17 @@ class AntAgent(Agent):
     # Basically the VIEW_DISTANCE for legs.
     POSITION_THRESHOLD = 20
 
-    ANT_SPAWN_FOOD_RATIO = 2
-
     # Steps without getting food
     LIFE = 1000
 
-    def __init__(self, unique_id, model):
+    def __init__(self, unique_id, model, life=LIFE):
         super().__init__(unique_id, model)
 
         self.ant_state_machine = AntStateMachine(self)
         # random number between 0 and 360
         self.direction = self.random.random() * 360
 
-        self.life = AntAgent.LIFE
+        self.life = life
 
         self.has_food = False
         self.seen_markers = set()
@@ -101,7 +99,7 @@ class AntAgent(Agent):
             self.life = AntAgent.LIFE
             self.model.food_in_home_amount -= 0.5
 
-        if self.model.food_in_home_amount >= self.model.num_agents * AntAgent.ANT_SPAWN_FOOD_RATIO:
+        if self.model.food_in_home_amount >= self.model.num_agents * self.model.create_ants_ratio:
             self.model._create_ant(self.model.home_location)
             self.model.num_agents += 1
             self.model.food_in_home_amount -= 1
