@@ -35,6 +35,7 @@ class AntAgent(Agent):
         self.direction = self.random.random() * 360
 
         self.life = life
+        self.max_life = life
 
         self.has_food = False
         self.seen_markers = set()
@@ -92,11 +93,11 @@ class AntAgent(Agent):
         self.model.space.remove_agent(self)
 
     def life_left(self):
-        return self.life / AntAgent.LIFE
+        return self.life / self.max_life
 
     def reset_life(self):
         if self.model.food_in_home_amount > 0:
-            self.life = AntAgent.LIFE
+            self.life = self.max_life
             self.model.food_in_home_amount -= 0.5
 
         if self.model.food_in_home_amount >= self.model.num_agents * self.model.create_ants_ratio:

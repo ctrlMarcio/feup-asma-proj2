@@ -42,7 +42,7 @@ def main():
         "number", "Home y", value=-1)
 
     food_source_scenario_option = UserSettableParameter(
-        "choice", "Food source scenario", choices=["no scenario", "scenario 1", "scenario 2"], value="no scenario")
+        "choice", "Food source scenario", choices=["no scenario", "scenario 1", "scenario 2", "scenario 3"], value="no scenario")
 
     food_chart = ChartModule([{
         "Label": "Food in Sources",

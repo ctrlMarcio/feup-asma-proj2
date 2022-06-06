@@ -12,6 +12,12 @@ from mesa.datacollection import DataCollector
 class AntsModel(Model):
     """A model with some number of agents."""
 
+    FOOD_SOURCES_SCENARIOS = {
+        "scenario 1": 1,
+        "scenario 2": 1,
+        "scenario 3": 3,
+    }
+
     def __init__(self, N, width, height, food_sources=1,
                  food_source_amount=25, display_view_distance=False,
                  display_markers=False, home_x=-1, home_y=-1,
@@ -29,10 +35,13 @@ class AntsModel(Model):
         self.food_in_sources_amount = 0
         self.food_in_home_amount = 0
 
+        self.food_sources_count = 0
+
         # configurable parameters
         self.home_location = (home_x, home_y)
         self.food_source_scenario = food_source_scenario
-        self.food_sources = food_sources if self.food_source_scenario == "no scenario" else 1
+        self.food_sources = food_sources if self.food_source_scenario == "no scenario" else AntsModel.FOOD_SOURCES_SCENARIOS[
+            self.food_source_scenario]
         self.food_source_amount = food_source_amount
         self.display_view_distance = display_view_distance
         self.display_markers = display_markers
@@ -71,6 +80,11 @@ class AntsModel(Model):
         elif self.food_source_scenario == "scenario 2":
             food_location = (300, 300)
             quantity = 10
+        elif self.food_source_scenario == "scenario 3":
+            locations = [(10, 10), (300, 300), (10, 450)]
+
+            food_location = locations[self.food_sources_count]
+            quantity = 5
 
         # add base food source
         last_food_source = FoodAgent(
@@ -81,6 +95,8 @@ class AntsModel(Model):
 
         self.schedule.add(last_food_source)
         self.space.place_agent(last_food_source, food_location)
+
+        self.food_sources_count += 1
 
         for i in range(1, quantity):
             # calculate next food source based on a an adjacent direction
@@ -105,7 +121,8 @@ class AntsModel(Model):
                     food_location, self.home_location)
 
     def _create_ant(self, location):
-        a = AntAgent(self.next_id(), self)  # i + 1 because home agent is 0
+        # i + 1 because home agent is 0
+        a = AntAgent(self.next_id(), self, self.ants_life)
         self.schedule.add(a)
         # Add the agent to a random grid cell
         self.space.place_agent(a, location)

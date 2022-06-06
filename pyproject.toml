@@ -2,7 +2,7 @@
 name = "ants"
 version = "0.1.0"
 description = ""
-authors = ["Márcio Duarte <zmduartez@gmail.com>"]
+authors = ["Marcio Duarte <zmduartez@gmail.com>"]
 readme = "README.md"
 packages = [{include = "ants"}]
 
